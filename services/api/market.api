@@ -1,0 +1,94 @@
+syntax = "v1"
+
+info(
+	title: "行情系统API"
+	desc: "提供行情数据查询和订阅服务"
+	author: "Market System"
+	version: "v1.0"
+)
+
+type (
+	// Ticker 请求响应
+	TickerRequest {
+		Symbol string `path:"symbol"`
+	}
+
+	TickerResponse {
+		Symbol    string  `json:"symbol"`
+		LastPrice float64 `json:"last_price"`
+		BidPrice  float64 `json:"bid_price"`
+		AskPrice  float64 `json:"ask_price"`
+		High24h   float64 `json:"high_24h"`
+		Low24h    float64 `json:"low_24h"`
+		Volume24h float64 `json:"volume_24h"`
+		Timestamp int64   `json:"timestamp"`
+	}
+
+	// K线 请求响应
+	KlineRequest {
+		Symbol   string `form:"symbol"`
+		Interval string `form:"interval,default=1m"`
+		Limit    int64  `form:"limit,default=100"`
+	}
+
+	Kline {
+		OpenTime  int64   `json:"open_time"`
+		CloseTime int64   `json:"close_time"`
+		Open      float64 `json:"open"`
+		High      float64 `json:"high"`
+		Low       float64 `json:"low"`
+		Close     float64 `json:"close"`
+		Volume    float64 `json:"volume"`
+		QuoteVol  float64 `json:"quote_vol"`
+		TradeNum  int64   `json:"trade_num"`
+	}
+
+	KlineResponse {
+		Symbol   string  `json:"symbol"`
+		Interval string  `json:"interval"`
+		Data     []Kline `json:"data"`
+	}
+
+	// 深度 请求响应
+	DepthRequest {
+		Symbol string `path:"symbol"`
+		Limit  int64  `form:"limit,default=20"`
+	}
+
+	PriceLevel {
+		Price  float64 `json:"price"`
+		Amount float64 `json:"amount"`
+	}
+
+	DepthResponse {
+		Symbol    string       `json:"symbol"`
+		Bids      []PriceLevel `json:"bids"`
+		Asks      []PriceLevel `json:"asks"`
+		Timestamp int64        `json:"timestamp"`
+	}
+
+	// 通用响应
+	BaseResponse {
+		Code int         `json:"code"`
+		Msg  string      `json:"msg"`
+		Data interface{} `json:"data,omitempty"`
+	}
+)
+
+@server(
+	prefix: /api/v1
+	group: market
+)
+service market-api {
+	@doc "获取行情快照"
+	@handler GetTicker
+	get /ticker/:symbol (TickerRequest) returns (TickerResponse)
+
+	@doc "获取K线数据"
+	@handler GetKline
+	get /kline (KlineRequest) returns (KlineResponse)
+
+	@doc "获取深度数据"
+	@handler GetDepth
+	get /depth/:symbol (DepthRequest) returns (DepthResponse)
+}

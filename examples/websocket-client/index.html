@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market WebSocket 测试客户端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status.connected {
+            background: #10b981;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #374151;
+            min-width: 100px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-connect {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-disconnect {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-subscribe {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #6b7280;
+            color: white;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            min-width: auto;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px 30px;
+        }
+
+        .panel {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .panel h3 {
+            color: #374151;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        .message.ticker {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .message.depth {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+
+        .message.trade {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+        }
+
+        .message.kline {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .message.system {
+            background: #f3f4f6;
+            border-left: 4px solid #6b7280;
+        }
+
+        .message.error {
+            background: #fecaca;
+            border-left: 4px solid #dc2626;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #111827;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group label {
+                min-width: auto;
+            }
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Market WebSocket 测试客户端</h1>
+            <div id="status" class="status disconnected">未连接</div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>服务器地址:</label>
+                <input type="text" id="wsUrl" value="ws://localhost:8888/ws" placeholder="WebSocket URL">
+                <button class="btn-connect" onclick="connect()">连接</button>
+                <button class="btn-disconnect" onclick="disconnect()">断开</button>
+            </div>
+
+            <div class="control-group">
+                <label>交易对:</label>
+                <input type="text" id="symbol" value="BTCUSDT" placeholder="例如: BTCUSDT">
+                <button class="btn-subscribe" onclick="subscribeAll()">订阅所有</button>
+                <button class="btn-clear" onclick="clearMessages()">清空日志</button>
+            </div>
+
+            <div class="control-group">
+                <label>频道:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" value="ticker" checked> Ticker</label>
+                    <label><input type="checkbox" value="depth" checked> Depth</label>
+                    <label><input type="checkbox" value="trade" checked> Trade</label>
+                    <label><input type="checkbox" value="kline" checked> Kline</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h3>📈 统计信息</h3>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">接收消息</div>
+                        <div class="stat-value" id="msgCount">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">连接时长</div>
+                        <div class="stat-value" id="connTime">0s</div>
+                    </div>
+                </div>
+                <div id="latestData" style="background: white; padding: 15px; border-radius: 6px; min-height: 280px;">
+                    <p style="color: #6b7280;">等待数据...</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>📝 消息日志</h3>
+                <div id="messages" class="messages scrollbar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+        let connectTime = null;
+        let timeInterval = null;
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                addMessage('system', '已经连接，请先断开');
+                return;
+            }
+
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                updateStatus(true);
+                addMessage('system', `✓ 已连接到 ${url}`);
+                connectTime = Date.now();
+                startTimer();
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            };
+
+            ws.onclose = () => {
+                updateStatus(false);
+                addMessage('system', '✗ 连接已断开');
+                stopTimer();
+            };
+
+            ws.onerror = (error) => {
+                addMessage('error', `连接错误: ${error.message || '未知错误'}`);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function subscribeAll() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('error', '请先连接到服务器');
+                return;
+            }
+
+            const symbol = document.getElementById('symbol').value;
+            const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked');
+
+            checkboxes.forEach(checkbox => {
+                const channel = checkbox.value;
+                const msg = {
+                    action: 'subscribe',
+                    channel: channel,
+                    symbol: symbol
+                };
+                ws.send(JSON.stringify(msg));
+                addMessage('system', `→ 订阅 ${channel}:${symbol}`);
+            });
+        }
+
+        function handleMessage(msg) {
+            messageCount++;
+            document.getElementById('msgCount').textContent = messageCount;
+
+            switch (msg.type) {
+                case 'welcome':
+                    addMessage('system', `欢迎消息: ${JSON.stringify(msg, null, 2)}`);
+                    break;
+                case 'subscribed':
+                    addMessage('system', `✓ 订阅成功: ${JSON.stringify(msg.data)}`);
+                    break;
+                case 'unsubscribed':
+                    addMessage('system', `✓ 取消订阅: ${JSON.stringify(msg.data)}`);
+                    break;
+                case 'pong':
+                    addMessage('system', '✓ Pong收到');
+                    break;
+                case 'error':
+                    addMessage('error', `错误: ${msg.error}`);
+                    break;
+                default:
+                    handleMarketData(msg);
+            }
+        }
+
+        function handleMarketData(msg) {
+            const channel = msg.channel || '';
+            let type = 'system';
+
+            if (channel.includes('ticker')) {
+                type = 'ticker';
+                displayTicker(msg.data);
+            } else if (channel.includes('depth')) {
+                type = 'depth';
+            } else if (channel.includes('trade')) {
+                type = 'trade';
+            } else if (channel.includes('kline')) {
+                type = 'kline';
+            }
+
+            addMessage(type, `[${channel}] ${JSON.stringify(msg.data, null, 2)}`);
+        }
+
+        function displayTicker(data) {
+            const html = `
+                <div style="border: 2px solid #3b82f6; border-radius: 6px; padding: 15px; background: #eff6ff;">
+                    <h4 style="color: #1e40af; margin-bottom: 10px;">📊 ${data.symbol} - Ticker</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px;">
+                        <div><strong>最新价:</strong> ${data.last_price?.toFixed(2) || 'N/A'}</div>
+                        <div><strong>买一价:</strong> ${data.bid_price?.toFixed(2) || 'N/A'}</div>
+                        <div><strong>卖一价:</strong> ${data.ask_price?.toFixed(2) || 'N/A'}</div>
+                        <div><strong>24h最高:</strong> ${data.high_24h?.toFixed(2) || 'N/A'}</div>
+                        <div><strong>24h最低:</strong> ${data.low_24h?.toFixed(2) || 'N/A'}</div>
+                        <div><strong>24h成交量:</strong> ${data.volume_24h?.toFixed(2) || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('latestData').innerHTML = html;
+        }
+
+        function addMessage(type, text) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `<span class="timestamp">[${timestamp}]</span>${text}`;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // 限制消息数量
+            while (messagesDiv.children.length > 100) {
+                messagesDiv.removeChild(messagesDiv.firstChild);
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+            messageCount = 0;
+            document.getElementById('msgCount').textContent = '0';
+        }
+
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '已连接';
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '未连接';
+            }
+        }
+
+        function startTimer() {
+            timeInterval = setInterval(() => {
+                if (connectTime) {
+                    const seconds = Math.floor((Date.now() - connectTime) / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const hours = Math.floor(minutes / 60);
+
+                    let timeStr = '';
+                    if (hours > 0) {
+                        timeStr = `${hours}h ${minutes % 60}m`;
+                    } else if (minutes > 0) {
+                        timeStr = `${minutes}m ${seconds % 60}s`;
+                    } else {
+                        timeStr = `${seconds}s`;
+                    }
+
+                    document.getElementById('connTime').textContent = timeStr;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timeInterval) {
+                clearInterval(timeInterval);
+                timeInterval = null;
+            }
+            connectTime = null;
+            document.getElementById('connTime').textContent = '0s';
+        }
+
+        // 页面加载完成后自动连接
+        window.addEventListener('load', () => {
+            addMessage('system', '页面已加载，点击"连接"按钮开始测试');
+        });
+
+        // 页面关闭时断开连接
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>

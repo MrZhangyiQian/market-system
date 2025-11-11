@@ -1,0 +1,26 @@
+Name: market-api
+Host: 0.0.0.0
+Port: 8080
+
+# 日志配置
+Log:
+  ServiceName: market-api
+  Mode: console
+  Level: info
+
+# Redis 配置
+Redis:
+  Host: localhost
+  Port: 6379
+  Password: ""
+  DB: 0
+
+# 超时配置
+Timeout: 30000
+
+# 限流配置
+MaxConns: 10000
+MaxBytes: 1048576
+
+# 跨域配置
+CorsHeaders: "*"

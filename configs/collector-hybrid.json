@@ -1,0 +1,105 @@
+{
+  "server": {
+    "name": "market-collector-hybrid",
+    "host": "0.0.0.0",
+    "port": 8081
+  },
+  "exchanges": [
+    {
+      "name": "internal",
+      "ws_url": ":9001",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "MYTOKEN_USDT"
+      ],
+      "channels": [
+        "ticker",
+        "depth",
+        "trade"
+      ],
+      "enable": true,
+      "comment": "内部交易引擎数据源"
+    },
+    {
+      "name": "binance",
+      "ws_url": "wss://stream.binance.com:9443/ws",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "BNBUSDT",
+        "DOGEUSDT"
+      ],
+      "channels": [
+        "ticker",
+        "depth",
+        "trade"
+      ],
+      "enable": true,
+      "comment": "Binance 外部数据源"
+    }
+  ],
+  "symbol_configs": [
+    {
+      "symbol": "BTCUSDT",
+      "mode": "HYBRID",
+      "primary_source": "internal",
+      "external_source": "binance",
+      "merge_strategy": "priority",
+      "enable": true,
+      "description": "主流交易对，混合模式，优先内部数据"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "mode": "HYBRID",
+      "primary_source": "internal",
+      "external_source": "binance",
+      "merge_strategy": "supplement",
+      "enable": true,
+      "description": "主流交易对，混合模式，外部数据补充"
+    },
+    {
+      "symbol": "MYTOKEN_USDT",
+      "mode": "INTERNAL_ONLY",
+      "primary_source": "internal",
+      "enable": true,
+      "description": "平台独有代币，仅使用内部数据"
+    },
+    {
+      "symbol": "BNBUSDT",
+      "mode": "EXTERNAL_ONLY",
+      "external_source": "binance",
+      "enable": true,
+      "description": "非本地交易对，仅展示外部数据"
+    },
+    {
+      "symbol": "DOGEUSDT",
+      "mode": "EXTERNAL_ONLY",
+      "external_source": "binance",
+      "enable": true,
+      "description": "纯展示外部行情"
+    }
+  ],
+  "kafka": {
+    "brokers": [
+      "localhost:9092"
+    ],
+    "topics": {
+      "ticker": "market.ticker",
+      "depth": "market.depth",
+      "trade": "market.trade",
+      "kline": "market.kline"
+    }
+  },
+  "log": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout"
+  },
+  "hybrid_mode": {
+    "enable": true,
+    "internal_port": 9001,
+    "data_freshness_threshold": 5000,
+    "price_deviation_limit": 10.0
+  }
+}

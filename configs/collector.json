@@ -1,0 +1,54 @@
+{
+  "server": {
+    "name": "market-collector",
+    "host": "0.0.0.0",
+    "port": 8081
+  },
+  "exchanges": [
+    {
+      "name": "binance",
+      "ws_url": "wss://stream.binance.com:9443/ws",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "BNBUSDT"
+      ],
+      "channels": [
+        "ticker",
+        "depth",
+        "trade"
+      ],
+      "enable": true
+    },
+    {
+      "name": "okx",
+      "ws_url": "wss://ws.okx.com:8443/ws/v5/public",
+      "symbols": [
+        "BTC-USDT",
+        "ETH-USDT"
+      ],
+      "channels": [
+        "ticker",
+        "depth",
+        "trade"
+      ],
+      "enable": false
+    }
+  ],
+  "kafka": {
+    "brokers": [
+      "localhost:9092"
+    ],
+    "topics": {
+      "ticker": "market.ticker",
+      "depth": "market.depth",
+      "trade": "market.trade",
+      "kline": "market.kline"
+    }
+  },
+  "log": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout"
+  }
+}
